@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="./vendor/snap.svg.js"></script>
+    <script src="./dist/snappy-diagram.js"></script>
+    <link href="./dist/snappy-diagram.css" media="all" rel="stylesheet" type="text/css">
+    <title>svg</title>
+  </head>
+  <body>
+    <script>
+      let win_w = window.innerWidth;
+      let win_h = window.innerHeight;
+
+      /* 重写draw方法 保证每次调用时 清空当前SVG */
+      let o = SnappyDiagram.prototype.draw;
+      SnappyDiagram.prototype.draw = function() {
+        this.snap.clear();
+        o.call(this);
+      };
+
+      /* ****************   一些操作接口   ********************* */
+      function addnew (shape, options) {
+        diagram.addBox(0, 0, { attrs: {width:200, height: 100} });
+        diagram.draw();
+      }
+
+      function toogleDrag () {
+        diagram.options.allowDrag = !diagram.options.allowDrag;
+        diagram.draw();
+      }
+
+
+      diagram = new SnappyDiagram({ width: 200, height: 100, allowDrag: false})
+
+      diagram.snap.attr('viewBox', `0 0 ${win_w} ${win_h}`);
+      diagram.snap.attr('width', `100%`);
+      diagram.snap.attr('height', `100%`);
+
+
+
+
+      addnew();
+    </script>
+  </body>
+</html>
