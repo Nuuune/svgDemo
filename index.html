@@ -21,8 +21,9 @@
 
       /* ****************   一些操作接口   ********************* */
       function addnew (shape, options) {
-        diagram.addBox(0, 0, { attrs: {width:200, height: 100} });
+        let cell = diagram.addBox(0, 0, { attrs: {width:175, height: 50} });
         diagram.draw();
+        return cell;
       }
 
       function toogleDrag () {
@@ -30,8 +31,32 @@
         diagram.draw();
       }
 
+      function addText(cell, text) {
+        cell.addText(text);
+        diagram.draw();
+        return cell;
+      }
 
-      diagram = new SnappyDiagram({ width: 200, height: 100, allowDrag: false})
+      function delText(cell) {
+        cell.delText();
+        diagram.draw();
+        return cell;
+      }
+
+      function addImg(cell, imgUrl) {
+        cell.addImg(imgUrl);
+        diagram.draw();
+        return cell;
+      }
+
+      function delImg(cell) {
+        cell.delImg();
+        diagram.draw();
+        return cell;
+      }
+
+
+      diagram = new SnappyDiagram({ width: 175, height: 50, allowDrag: false})
 
       diagram.snap.attr('viewBox', `0 0 ${win_w} ${win_h}`);
       diagram.snap.attr('width', `100%`);
@@ -40,7 +65,7 @@
 
 
 
-      addnew();
+      cell1 = addnew();
     </script>
   </body>
 </html>

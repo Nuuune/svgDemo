@@ -8,7 +8,7 @@
     return Paper.prototype.multitext = function(x, y, txt, maxWidth, maxHeight, attributes) {
       var abc, bbox, currentLine, i, l, letterWidth, lines, svg, t, temp, tspans, widthSoFar, words;
       svg = Snap();
-      abc = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      abc = txt;
       temp = svg.text(0, 0, abc);
       temp.attr(attributes);
       letterWidth = temp.getBBox().width / abc.length;
@@ -155,7 +155,11 @@
     SnappyCell.prototype.cellAttrs = function(className) {
       var attrs, classes;
       attrs = this.options.attrs;
-      classes = [this.options.attrs["class"], 'snappy-cell', className];
+      var attclss = this.options.attrs["class"];    // 防止类名重复添加
+      if(attclss) {                                 // 如果已有类名就清空
+        attclss = undefined;                        //
+      }                                             //
+      classes = [attclss, 'snappy-cell', className];
       if (this.diagram.options.allowDrag) {
         classes.push('draggable');
       }
@@ -188,9 +192,14 @@
 
     SnappyCell.prototype.draw = function() {
       this.element = this.drawElement();
-      if (this.options.text) {
+      if (this.options.text && this.options.img) {
+        this.element = this.diagram.snap.g(this.element, this.drawText(), this.drawImg());
+      }else if(this.options.text) {
         this.element = this.diagram.snap.g(this.element, this.drawText());
+      }else if(this.options.img) {
+        this.element = this.diagram.snap.g(this.element, this.drawImg());
       }
+
       if (this.diagram.options.allowDrag) {
         this.element.undblclick(this.dbHandle);
         this.element.unclick(this.dbHandle);
@@ -220,9 +229,19 @@
         classList.remove("selected");
       } else {
         if(this.diagram.selected) { // 已选择了一个了， 进行后期处理 如：连接 等
+          let connectors = this.diagram.connectors;
+          let conExist = false;
+          for(let i = 0; i < connectors.length; i++) {
+            if((connectors[i].cellStart === this.diagram.selected && connectors[i].cellEnd === this)
+              || (connectors[i].cellStart === this && connectors[i].cellEnd === this.diagram.selected) ) {
+                conExist = true;
+                break;
+              }
+          }
+          if(conExist) return false;
           // console.log(this.diagram.selected);
           // console.log(this);
-          // console.log(this.diagram);
+          console.log("添加线段");
           this.diagram.addConnector(this.diagram.selected, this);
           this.diagram.draw();
 
@@ -230,11 +249,34 @@
           this.diagram.selected.element.node.classList.remove("selected");
           this.diagram.selected = null;
         }else {
-          console.log('sss');
           this.diagram.selected = this;
           classList.add("selected");
         }
       }
+    };
+
+    SnappyCell.prototype.addText = function(text) {
+      if(this.options.text){
+        this.delText()
+      }
+      this.options.text = text;
+      return this;
+    };
+    SnappyCell.prototype.addImg = function(img) {
+      if(this.options.img){
+        this.delImg()
+      }
+      this.options.img = img;
+      return this;
+    };
+
+    SnappyCell.prototype.delText = function() {
+      this.options.text = null;
+      return this;
+    };
+    SnappyCell.prototype.delImg = function() {
+      this.options.img = null;
+      return this;
     };
 
     SnappyCell.prototype.drawElement = function() {
@@ -242,8 +284,20 @@
     };
 
     SnappyCell.prototype.drawText = function() {
-      return this.diagram.snap.multitext(this.x() + this.diagram.options.cellSpacing / 2, this.y(), this.options.text, this.boxWidth(), this.boxHeight());
+      let bw = this.boxWidth();
+      let bh = this.boxHeight();
+      if(this.options.img) {
+        return this.diagram.snap.multitext(this.x() + bh, this.y(), this.options.text, bw - bh, bh); // 暂时只考虑长方形
+      } else {
+        return this.diagram.snap.multitext(this.x() + this.diagram.options.cellSpacing / 2, this.y(), this.options.text, bw, bh);
+      }
     };
+
+    SnappyCell.prototype.drawImg = function() {
+      let bw = this.boxWidth();
+      let bh = this.boxHeight();
+      return this.diagram.snap.image(this.options.img, this.x() + bh/1.5, this.y() + 5, bh - 10, bh - 10 )
+    }
 
     SnappyCell.prototype.moveHandler = function(dx, dy) {
       var connector, j, k, len, len1, ref, ref1, results;
@@ -591,7 +645,7 @@
         allowDrag: true,
         width: 1000,
         height: 500,
-        cellSpacing: 10,
+        cellSpacing: 0,
         boxRadius: 5,
         markerWidth: 7,
         markerHeight: 10
