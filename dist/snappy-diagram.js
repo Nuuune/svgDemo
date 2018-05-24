@@ -214,11 +214,27 @@
     };
 
     SnappyCell.prototype.dbHandle = function() {                      // 新增双击处理  现为删除处理
-      // let arr = this.diagram.cells[0];
-      // arr.splice(arr.indexOf(this), 1);
-      // this.diagram.draw();
-      // return true;
-      console.log("双击");
+      if(this.diagram.options.draggable) {
+        return false;
+      }
+      let arr = this.diagram.cells[0];
+      let arr2 = this.diagram.connectors;
+
+      let sarr = this.sourceConnections;
+      let tarr = this.targetConnections;
+
+      sarr.forEach(item => {
+        arr2.splice(arr2.indexOf(item), 1);
+      });
+
+      tarr.forEach(item => {
+        arr2.splice(arr2.indexOf(item), 1);
+      })
+
+      arr.splice(arr.indexOf(this), 1);
+
+      this.diagram.draw();
+      return true;
     };
 
     SnappyCell.prototype.clickHandle = function() {                      // 新增单击处理  现为选择处理
@@ -656,7 +672,7 @@
           this.options[key] = value;
         }
       }
-      this.snap = Snap(this.options.width, this.options.height).attr({
+      this.snap = Snap(this.options.el).attr({
         "class": 'snappy-diagram'
       });
       this.markerEnd = this.triangleMarker(this.options.markerWidth, this.options.markerHeight);
