@@ -164,7 +164,10 @@
       /* 重写draw方法 保证每次调用时 清空当前SVG */
       let o = SnappyDiagram.prototype.draw;
       SnappyDiagram.prototype.draw = function() {
+        console.log(this);
         this.snap.clear();
+        this.markerEnd = this.triangleMarker(this.options.markerWidth, this.options.markerHeight);
+        this.markerStart = this.triangleMarker(this.options.markerWidth, this.options.markerHeight, true);
         o.call(this);
       };
 
