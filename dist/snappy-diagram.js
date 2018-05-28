@@ -156,7 +156,6 @@
       var attrs, classes, cellColor;
       attrs = this.options.attrs;
       cellColor = this.options.cellColor;
-      console.log(this.options);
       var attclss = this.options.attrs["class"];    // 防止类名重复添加
       if(attclss) {                                 // 如果已有类名就清空
         attclss = undefined;                        //
@@ -203,41 +202,41 @@
       }
 
       if (this.diagram.options.allowDrag) {
-        this.element.undblclick(this.dbHandle);
+        // this.element.undblclick(this.dbHandle);
         this.element.unclick(this.dbHandle);
         this.element.drag(this.moveHandler, this.moveStartHandler, this.moveStopHandler);
       } else {
         this.element.undrag();                                       // 由于drag方法与dblclick有冲突， 改为模式切换
-        this.element.dblclick(this.dbHandle.bind(this));             // 由this.diagram.options.allowDrag 控制
+        // this.element.dblclick(this.dbHandle.bind(this));             // 由this.diagram.options.allowDrag 控制
         this.element.click(this.clickHandle.bind(this));             // 由this.diagram.options.allowDrag 控制
         this.element.node.classList.remove("draggable");             //
       }                                                              //
       return this.element;
     };
 
-    SnappyCell.prototype.dbHandle = function() {                      // 新增双击处理  现为删除处理
-      if(this.diagram.options.draggable) {
-        return false;
-      }
-      let arr = this.diagram.cells[0];
-      let arr2 = this.diagram.connectors;
-
-      let sarr = this.sourceConnections;
-      let tarr = this.targetConnections;
-
-      sarr.forEach(item => {
-        arr2.splice(arr2.indexOf(item), 1);
-      });
-
-      tarr.forEach(item => {
-        arr2.splice(arr2.indexOf(item), 1);
-      })
-
-      arr.splice(arr.indexOf(this), 1);
-
-      this.diagram.draw();
-      return true;
-    };
+    // SnappyCell.prototype.dbHandle = function() {                      // 新增双击处理  现为删除处理
+    //   if(this.diagram.options.draggable) {
+    //     return false;
+    //   }
+    //   let arr = this.diagram.cells[0];
+    //   let arr2 = this.diagram.connectors;
+    //
+    //   let sarr = this.sourceConnections;
+    //   let tarr = this.targetConnections;
+    //
+    //   sarr.forEach(item => {
+    //     arr2.splice(arr2.indexOf(item), 1);
+    //   });
+    //
+    //   tarr.forEach(item => {
+    //     arr2.splice(arr2.indexOf(item), 1);
+    //   })
+    //
+    //   arr.splice(arr.indexOf(this), 1);
+    //
+    //   this.diagram.draw();
+    //   return true;
+    // };
 
     SnappyCell.prototype.clickHandle = function() {                      // 新增单击处理  现为选择处理
       let classList = this.element.node.classList;
@@ -328,6 +327,7 @@
       ref = this.sourceConnections;
       for (j = 0, len = ref.length; j < len; j++) {
         connector = ref[j];
+
         connector.element.attr({
           x1: connector.currentCoords.x1 + dx,
           y1: connector.currentCoords.y1 + dy
@@ -346,7 +346,14 @@
     };
 
     SnappyCell.prototype.moveStartHandler = function() {
-      var connector, j, len, ref;
+      var connector, j, len, ref, allConIds;
+      allConIds = this.diagram.connectors.map(item => item.element.id); // 当前全部connectors的id
+      this.sourceConnections = this.sourceConnections.filter(item => {  //
+        return allConIds.indexOf(item.element.id) > -1;                 //  清理源connectors残留
+      })                                                                //
+      this.targetConnections = this.targetConnections.filter(item => {  //
+        return allConIds.indexOf(item.element.id) > -1;                 //  清理目标connectors残留
+      })                                                                //
       this.origTransform = this.element.transform().local;
       ref = this.connections();
       for (j = 0, len = ref.length; j < len; j++) {
@@ -398,7 +405,6 @@
     SnappyBox.prototype.drawElement = function() {
       var points;
       points = this.boxPoints();
-      console.log(this.options);
       if(this.options.borderType) {
         return this.element = this.diagram.snap.rect(points.x1, points.y1, points.x2 - points.x1, points.y2 - points.y1, this.boxHeight() / 2).attr(this.cellAttrs('snappy-cell-box'));
       }

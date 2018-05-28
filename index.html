@@ -38,8 +38,14 @@
         border-left: 1px solid #b9b9b9;
       }
       .tool-wrap > ul > li {
-        margin-left: 20px;
         margin-right: 20px;
+      }
+      .tool-wrap > ul > li:first-child {
+        margin-left: 20px;
+      }
+      .tool-wrap > .disable {
+        pointer-events: none;
+        opacity: 0.7;
       }
       .modal {
         position: absolute;
@@ -113,10 +119,11 @@
           <li class="btn"><span id="node2">节点二</span></li>
           <li class="btn"><span id="node3">节点三</span></li>
         </ul>
-        <ul>
+        <ul id="updelPart" class="flex flex-row">
           <li class="btn"><span id="udtext">修改文本</span></li>
+          <li class="btn"><span id="delcell">删除节点</span></li>
         </ul>
-        <ul>
+        <ul class="flex flex-row">
           <li class="btn"><span id="togmod">更换模式</span></li>
         </ul>
       </div>
@@ -183,11 +190,9 @@
             diagram.selected = null;
           }, 50);
         }
-        console.log(e);
       })
 
       toolWrap.addEventListener("click",function(e){
-        console.log(e);
         switch (e.target.id) {
           case "node1":
             addnew({borderType: 1, cellColor: `cell-green`}).addText("开始节点").addImg("http://localhost:7777/start.png");
@@ -208,6 +213,9 @@
           case "togmod":
             toogleDrag();
             break;
+          case "delcell":
+            delcell();
+            break;
           default:
             ;
         }
@@ -218,7 +226,6 @@
       /* 重写draw方法 保证每次调用时 清空当前SVG */
       let o = SnappyDiagram.prototype.draw;
       SnappyDiagram.prototype.draw = function() {
-        console.log(this);
         this.snap.clear();
         this.markerEnd = this.triangleMarker(this.options.markerWidth, this.options.markerHeight);
         this.markerStart = this.triangleMarker(this.options.markerWidth, this.options.markerHeight, true);
@@ -236,6 +243,33 @@
       function showInput() {
         modal.classList.add("show");
         modal_text.focus();
+      }
+
+      function delcell() {
+        if(diagram.options.draggable || !diagram.selected) {
+          return false;
+        }
+        let arr = diagram.cells[0].map(item => item.element.id);
+        let arr2 = diagram.connectors.map(item => item.element.id);
+
+        let selected = diagram.selected;
+        let sarr = selected.sourceConnections.map(item => item.element.id);
+        let tarr = selected.targetConnections.map(item => item.element.id);
+        console.log(arr2);
+        sarr.forEach(item => {
+          diagram.connectors[arr2.indexOf(item)] = undefined;
+        });
+        tarr.forEach(item => {
+          diagram.connectors[arr2.indexOf(item)] = undefined;
+        })
+        diagram.connectors = diagram.connectors.filter(item => {
+          return item !== undefined;
+        })
+  
+        diagram.cells[0].splice(arr.indexOf(selected.element.id), 1);
+
+        diagram.draw();
+        return true;
       }
 
 
@@ -256,9 +290,11 @@
         diagram.options.allowDrag = !diagram.options.allowDrag;
         if(diagram.options.allowDrag) {
           document.getElementById("togmod").innerText = `拖拽模式（布局）`;
+          document.getElementById("updelPart").classList.add(`disable`);
         } else {
           diagram.selected = null;
           document.getElementById("togmod").innerText = `基本模式（编辑）`;
+          document.getElementById("updelPart").classList.remove(`disable`);
         }
         diagram.draw();
       }
