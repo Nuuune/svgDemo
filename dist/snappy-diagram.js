@@ -37,9 +37,11 @@
         dy: '1.3em'
       });
       bbox = t.getBBox();
-      if (bbox.width < maxWidth) {
-        x = x + (maxWidth - bbox.width) / 2;
-      }
+      // 文本水平居中
+      // if (bbox.width < maxWidth) {
+      //   x = x + (maxWidth - bbox.width) / 2;
+      // }
+      // 文本垂直居中
       if (bbox.height < maxHeight) {
         y = y + (maxHeight - bbox.height) / 2;
       }
@@ -127,8 +129,6 @@
             y: this.y() + this.diagram.cellHeight - yOffset
           };break;
       }
-      console.log(anchor);
-      console.log(output);
       return output;
     };
 
@@ -153,13 +153,15 @@
     };
 
     SnappyCell.prototype.cellAttrs = function(className) {
-      var attrs, classes;
+      var attrs, classes, cellColor;
       attrs = this.options.attrs;
+      cellColor = this.options.cellColor;
+      console.log(this.options);
       var attclss = this.options.attrs["class"];    // 防止类名重复添加
       if(attclss) {                                 // 如果已有类名就清空
         attclss = undefined;                        //
       }                                             //
-      classes = [attclss, 'snappy-cell', className];
+      classes = [attclss, 'snappy-cell', cellColor, className];
       if (this.diagram.options.allowDrag) {
         classes.push('draggable');
       }
@@ -303,16 +305,19 @@
       let bw = this.boxWidth();
       let bh = this.boxHeight();
       if(this.options.img) {
-        return this.diagram.snap.multitext(this.x() + bh, this.y(), this.options.text, bw - bh, bh); // 暂时只考虑长方形
+        return this.diagram.snap.multitext(this.x() + bw / 2.4, this.y(), this.options.text, bw, bh); // 暂时只考虑长方形
       } else {
-        return this.diagram.snap.multitext(this.x() + this.diagram.options.cellSpacing / 2, this.y(), this.options.text, bw, bh);
+        return this.diagram.snap.multitext(this.x() + 20 + this.diagram.options.cellSpacing / 2, this.y(), this.options.text, bw, bh);
       }
     };
 
     SnappyCell.prototype.drawImg = function() {
       let bw = this.boxWidth();
       let bh = this.boxHeight();
-      return this.diagram.snap.image(this.options.img, this.x() + bh/1.5, this.y() + 5, bh - 10, bh - 10 )
+      if(this.options.borderType) {
+        return this.diagram.snap.image(this.options.img, this.x() + bh/3, this.y() + 5, bh - 10, bh - 10 );
+      }
+      return this.diagram.snap.image(this.options.img, this.x() + 5, this.y() + 5, bh - 10, bh - 10 )
     }
 
     SnappyCell.prototype.moveHandler = function(dx, dy) {
@@ -393,6 +398,10 @@
     SnappyBox.prototype.drawElement = function() {
       var points;
       points = this.boxPoints();
+      console.log(this.options);
+      if(this.options.borderType) {
+        return this.element = this.diagram.snap.rect(points.x1, points.y1, points.x2 - points.x1, points.y2 - points.y1, this.boxHeight() / 2).attr(this.cellAttrs('snappy-cell-box'));
+      }
       return this.element = this.diagram.snap.rect(points.x1, points.y1, points.x2 - points.x1, points.y2 - points.y1, this.diagram.options.boxRadius).attr(this.cellAttrs('snappy-cell-box'));
     };
 
@@ -829,6 +838,8 @@
         canvas = document.createElement('canvas');
         svgImage = new Image();
         svgImage.src = "data:image/svg+xml;utf8," + (unescape(svg.outerHTML));
+        svgImage.width = this.snap.node.width.baseVal.value;
+        svgImage.height = this.snap.node.height.baseVal.value;
         svgImage.onload = (function(_this) {
           return function() {
             canvas.width = svgImage.width;

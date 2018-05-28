@@ -24,15 +24,22 @@
         flex: 1;
       }
       .svg-wrap {
-        margin-left: 100px;
-        margin-right: 50px;
         height: 90%;
-        padding: 10px;
+        width: 100%;
+        position: relative;
       }
       .tool-wrap {
-        width: 100px;
-        height: 80%;
-        background:#b346b1;
+        width: 100%;
+        height: 34px;
+        background:#e7e7e7;
+        border-bottom: 2px solid #dcdcdc;
+      }
+      .tool-wrap ul + ul {
+        border-left: 1px solid #b9b9b9;
+      }
+      .tool-wrap > ul > li {
+        margin-left: 20px;
+        margin-right: 20px;
       }
       .modal {
         position: absolute;
@@ -61,9 +68,11 @@
         cursor: pointer;
         color: #39c5c9;
       }
+      /* 一些格式化 */
       * {
         margin:0;
         padding: 0;
+        box-sizing: border-box;
       }
       span, p, tspan {
         -moz-user-select: none; /*火狐*/
@@ -72,40 +81,83 @@
         -khtml-user-select: none; /*早期浏览器*/
         user-select: none;
       }
-
+      ul li{
+        list-style-type:none;
+      }
+      .bg-green {
+        background: #d2f9df;
+      }
+      .bg-red {
+        background: #fbdfdf;
+      }
+      .bg-white {
+        background: #fff;
+      }
+      .cell-green {
+        fill: #d2f9df;
+      }
+      .cell-red {
+        fill: #fbdfdf;
+      }
+      .cell-white {
+        fill: #fff;
+      }
     </style>
     <title>svg</title>
   </head>
   <body>
-    <div class="flex flex-row app">
-      <div class="tool-wrap flex flex-around">
-        <div class="btn">
-          <span id="node1">节点一</span>
-        </div>
-        <div class="btn">
-          <span id="node2">节点二</span>
-        </div>
-        <div class="btn">
-          <span id="node3">节点三</span>
-        </div>
-        <div class="btn">
-          <span id="udtext">修改文本</span>
-        </div>
-        <div class="btn">
-          <span id="togmod">更换模式</span>
-        </div>
+    <div class="flex app">
+      <div class="tool-wrap flex flex-row">
+        <ul class="flex flex-row">
+          <li class="btn"><span id="node1">节点一</span></li>
+          <li class="btn"><span id="node2">节点二</span></li>
+          <li class="btn"><span id="node3">节点三</span></li>
+        </ul>
+        <ul>
+          <li class="btn"><span id="udtext">修改文本</span></li>
+        </ul>
+        <ul>
+          <li class="btn"><span id="togmod">更换模式</span></li>
+        </ul>
       </div>
       <div class="flex-item-1 svg-wrap">
-        <svg id="my" width="100%" height="100%"/></svg>
+        <svg id="my" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"/></svg>
       </div>
       <div class="modal flex flex-center">
         <div class="content flex flex-row">
-          <label>修改：</label><input id="modal_input" type="text" />
+          <label>文本：</label><input id="modal_input" type="text" />
+          <label>背景色：</label>
+          <select onchange="selectColor(this)" style="width: 40px">
+            <option class="bg-green" value="#d2f9df"></option>
+            <option class="bg-red" value="#fbdfdf"></option>
+            <option class="bg-white" value="#fff"></option>
+          </select>
         </div>
       </div>
     </div>
 
     <script>
+
+      function selectColor(selectDom) {
+        let value = selectDom.value;
+        switch (value) {
+          case `#d2f9df`:
+            selectDom.className = `bg-green`;
+            break;
+          case `#fbdfdf`:
+            selectDom.className = `bg-red`;
+            break;
+          case `#fff`:
+            selectDom.className = `bg-white`;
+            break;
+          default:
+            ;
+        }
+      }
+      //----------------------
+
+
+
       let win_w = document.documentElement.clientWidth || document.body.clientWidth;
       let win_h = document.documentElement.clientHeight || document.body.clientHeight;
       let app = document.querySelector(".app");
@@ -117,6 +169,7 @@
 
       app.style.width = win_w + 'px';
       app.style.height = win_h + 'px';
+      svgStage.setAttribute(`viewBox`, `0 0 ${win_w} ${win_h}`);
 
 
       modal_text.addEventListener("keydown",function(e){
@@ -126,7 +179,8 @@
           modal_text.value = "";
           modal.classList.remove("show");
           setTimeout(function(){
-            addText(diagram.selected ,text)
+            addText(diagram.selected ,text);
+            diagram.selected = null;
           }, 50);
         }
         console.log(e);
@@ -136,15 +190,15 @@
         console.log(e);
         switch (e.target.id) {
           case "node1":
-            addnew().addText("开始").addImg("./start.png");
+            addnew({borderType: 1, cellColor: `cell-green`}).addText("开始节点").addImg("http://localhost:7777/start.png");
             diagram.draw();
             break;
           case "node2":
-            addnew().addText("过程").addImg("./start.png");
+            addnew({cellColor: `cell-red`}).addText("过程节点").addImg("http://localhost:7777/start.png");
             diagram.draw();
             break;
           case "node3":
-            addnew().addText("结束").addImg("./start.png");
+            addnew({borderType: 1, cellColor: `cell-white`}).addText("结束节点").addImg("http://localhost:7777/start.png");
             diagram.draw();
             break;
           case "udtext":
@@ -186,9 +240,10 @@
 
 
       /* ****************   一些操作接口   ********************* */
-      function addnew (shape, options) {
+      function addnew (options) {
         let cell;
-        cell = diagram.addBox(0, 0, { attrs: {width:initCell.w, height: initCell.h} });
+        let { borderType, cellColor } = options;
+        cell = diagram.addBox(0, 0, { attrs: {width:initCell.w, height: initCell.h}, borderType, cellColor});
         if(diagram.options.allowDrag){
           diagram.draw();
         }else {
@@ -199,6 +254,12 @@
 
       function toogleDrag () {
         diagram.options.allowDrag = !diagram.options.allowDrag;
+        if(diagram.options.allowDrag) {
+          document.getElementById("togmod").innerText = `拖拽模式（布局）`;
+        } else {
+          diagram.selected = null;
+          document.getElementById("togmod").innerText = `基本模式（编辑）`;
+        }
         diagram.draw();
       }
 
@@ -225,7 +286,7 @@
         diagram.draw();
         return cell;
       }
-      
+
       getCellShape();
       diagram = new SnappyDiagram({ el: "#my", width: initCell.w, height: initCell.h, allowDrag: false})
       // diagram.snap.attr('viewBox', `0 0 ${win_w} ${win_h}`);
