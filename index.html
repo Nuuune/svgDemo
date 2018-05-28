@@ -222,10 +222,9 @@
         diagram.draw();
         return cell;
       }
-
-
-      diagram = new SnappyDiagram({ el: "#my", width: 175, height: 50, allowDrag: false})
+      
       getCellShape();
+      diagram = new SnappyDiagram({ el: "#my", width: initCell.w, height: initCell.h, allowDrag: false})
       // diagram.snap.attr('viewBox', `0 0 ${win_w} ${win_h}`);
       // diagram.snap.attr('width', `100%`);
       // diagram.snap.attr('height', `100%`);
