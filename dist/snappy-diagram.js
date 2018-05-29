@@ -279,6 +279,20 @@
       this.options.text = text;
       return this;
     };
+    SnappyCell.prototype.addBorderType = function(type) {
+      if(this.options.borderType >= 0){
+        this.delBorderType()
+      }
+      this.options.borderType = type;
+      return this;
+    };
+    SnappyCell.prototype.addCellColor = function(color) {
+      if(this.options.cellColor){
+        this.delCellColor()
+      }
+      this.options.cellColor = color;
+      return this;
+    };
     SnappyCell.prototype.addImg = function(img) {
       if(this.options.img){
         this.delImg()
@@ -289,6 +303,14 @@
 
     SnappyCell.prototype.delText = function() {
       this.options.text = null;
+      return this;
+    };
+    SnappyCell.prototype.delCellColor = function() {
+      this.options.cellColor = null;
+      return this;
+    };
+    SnappyCell.prototype.delBorderType = function() {
+      this.options.borderType = null;
       return this;
     };
     SnappyCell.prototype.delImg = function() {
@@ -313,14 +335,16 @@
     SnappyCell.prototype.drawImg = function() {
       let bw = this.boxWidth();
       let bh = this.boxHeight();
-      if(this.options.borderType) {
+      if(this.options.borderType > 0) {
         return this.diagram.snap.image(this.options.img, this.x() + bh/3, this.y() + 5, bh - 10, bh - 10 );
       }
       return this.diagram.snap.image(this.options.img, this.x() + 5, this.y() + 5, bh - 10, bh - 10 )
     }
 
     SnappyCell.prototype.moveHandler = function(dx, dy) {
-      var connector, j, k, len, len1, ref, ref1, results;
+      var connector, j, k, len, len1, ref, ref1, results, scaleTimes = this.diagram.scaleTimes;
+      dx *= scaleTimes;
+      dy *= scaleTimes;
       this.element.attr({
         transform: "" + this.origTransform + (this.origTransform != null ? 'T' : 't') + ([dx, dy].join(','))
       });
@@ -405,9 +429,10 @@
     SnappyBox.prototype.drawElement = function() {
       var points;
       points = this.boxPoints();
-      if(this.options.borderType) {
+      if(this.options.borderType > 0) {
         return this.element = this.diagram.snap.rect(points.x1, points.y1, points.x2 - points.x1, points.y2 - points.y1, this.boxHeight() / 2).attr(this.cellAttrs('snappy-cell-box'));
       }
+
       return this.element = this.diagram.snap.rect(points.x1, points.y1, points.x2 - points.x1, points.y2 - points.y1, this.diagram.options.boxRadius).attr(this.cellAttrs('snappy-cell-box'));
     };
 
@@ -668,6 +693,7 @@
       this.options = options1 != null ? options1 : {};
       this.cellCount = 0;
       this.rowCount = 0;
+      this.scaleTimes = 1;  // 新增 当前放大倍数；
       this.cells = [];
       this.selected = null;  // 新增 已选择cell
       this.connectors = [];

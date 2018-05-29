@@ -23,6 +23,13 @@
       .flex-item-1{
         flex: 1;
       }
+      .flex-beRow {
+        width: 100%;
+        margin-bottom: 20px;
+      }
+      .flex-beRow:last-child {
+        margin-bottom: 0;
+      }
       .svg-wrap {
         height: 90%;
         width: 100%;
@@ -56,8 +63,12 @@
         z-index: -1;
       }
       .modal .content {
+        max-width: 480px;
+        min-height: 150px;
         padding: 10px;
-        background: white;
+        border-radius: 10px;
+        box-shadow: 1px 1px 10px 2px #fff;
+        background: #6aedf5;
       }
       .show {
         z-index: 99;
@@ -86,6 +97,9 @@
         -ms-user-select: none; /*IE10*/
         -khtml-user-select: none; /*早期浏览器*/
         user-select: none;
+      }
+      label {
+        cursor: default;
       }
       ul li{
         list-style-type:none;
@@ -130,15 +144,26 @@
       <div class="flex-item-1 svg-wrap">
         <svg id="my" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"/></svg>
       </div>
-      <div class="modal flex flex-center">
-        <div class="content flex flex-row">
-          <label>文本：</label><input id="modal_input" type="text" />
-          <label>背景色：</label>
-          <select onchange="selectColor(this)" style="width: 40px">
-            <option class="bg-green" value="#d2f9df"></option>
-            <option class="bg-red" value="#fbdfdf"></option>
-            <option class="bg-white" value="#fff"></option>
-          </select>
+      <div id="modal" class="modal flex flex-center">
+        <div class="content flex flex-center">
+          <form id="udform" class="flex">
+            <div class="flex-beRow">
+              <label>节点类型:</label>
+              <input type="radio" id="form_bt0" name="borderType" value="0" /><label for="form_bt0">默认</label>
+              <input type="radio" id="form_bt1" name="borderType" value="1" /><label for="form_bt1">圆角</label>
+            </div>
+            <div class="flex-beRow">
+              <label for="form_text">文本：</label><input id="form_text" type="text" name="text" autofocus />
+            </div>
+            <div class="flex-beRow">
+              <label for="form_cc">背景色：</label>
+              <select id="form_cc" name="cellColor" onchange="selectColor(this)" style="width: 40px">
+                <option class="bg-green" value="cell-green"></option>
+                <option class="bg-red" value="cell-red"></option>
+                <option class="bg-white" value="cell-white"></option>
+              </select>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -148,13 +173,13 @@
       function selectColor(selectDom) {
         let value = selectDom.value;
         switch (value) {
-          case `#d2f9df`:
+          case `cell-green`:
             selectDom.className = `bg-green`;
             break;
-          case `#fbdfdf`:
+          case `cell-red`:
             selectDom.className = `bg-red`;
             break;
-          case `#fff`:
+          case `cell-white`:
             selectDom.className = `bg-white`;
             break;
           default:
@@ -169,28 +194,65 @@
       let win_h = document.documentElement.clientHeight || document.body.clientHeight;
       let app = document.querySelector(".app");
       let svgStage = document.querySelector("#my");
-      let modal = document.querySelector(".modal");
-      let modal_text = document.getElementById("modal_input");
+      let modal = document.querySelector("#modal");
       let toolWrap = document.querySelector(".tool-wrap");
+      let scaleTimes = 1.1;
       let initCell = {w: 0, h: 0};
 
       app.style.width = win_w + 'px';
       app.style.height = win_h + 'px';
       svgStage.setAttribute(`viewBox`, `0 0 ${win_w} ${win_h}`);
 
+      svgStage.addEventListener('mousewheel', function(e) {
+        let scale_w, scale_h, dw, dh, wRatio, hRatio;
+        let svgStage_w = svgStage.clientWidth, svgStage_h = svgStage.clientHeight;
+        if(e.deltaY > 0) {
+          scaleTimes += 0.1;
+          if(scaleTimes > 1.6) scaleTimes = 1.6;
+        } else {
+          scaleTimes -= 0.1;
+          if(scaleTimes < 0.5) scaleTimes = 0.5;
+        }
+        wRatio = e.offsetX / svgStage_w;
+        hRatio = e.offsetY / svgStage_h;
+        scale_w = svgStage_w * scaleTimes;
+        scale_h = svgStage_h * scaleTimes;
+        dw = scale_w - svgStage_w;
+        dh = scale_h - svgStage_h;
+        svgStage.setAttribute(`viewBox`, `${-dw * wRatio} ${-dh * hRatio} ${scale_w} ${scale_h}`);
+        diagram.scaleTimes = scaleTimes;
+      }, false);
+      modal.addEventListener('keypress', EntrerDown_closeModal, false);
+      modal.addEventListener('click', click_closeModal, false);
 
-      modal_text.addEventListener("keydown",function(e){
-        let text;
-        if(e.keyCode === 13) {
-          text = modal_text.value;
-          modal_text.value = "";
+      function EntrerDown_closeModal(e) {
+        let myform = document.getElementById(`udform`);
+        let {text, borderType, cellColor} = myform;
+        let selected = diagram.selected;
+        let options = selected.options;
+        let _text = text.value, _borderType = borderType.value, _cellColor = cellColor.value;
+
+        // 直接跳出的情况
+        if(e.keyCode !== 13) return ;
+        e.preventDefault();
+        if(!(_text && (_borderType >= 0) && _cellColor)) return alert(`不允许空值`);
+        if(options.text === _text
+          && options.borderType === _borderType
+          && options.cellColor === _cellColor) return console.log(`未修改`);
+
+        // 进行修改操作
           modal.classList.remove("show");
           setTimeout(function(){
-            addText(diagram.selected ,text);
+            selected.addText(_text).addBorderType(_borderType).addCellColor(_cellColor);
+            diagram.draw();
             diagram.selected = null;
           }, 50);
-        }
-      })
+      }
+
+      function click_closeModal(e) {
+        if(e.target.id !== `modal`) return ;
+        modal.classList.remove("show");
+      }
 
       toolWrap.addEventListener("click",function(e){
         switch (e.target.id) {
@@ -208,7 +270,7 @@
             break;
           case "udtext":
             if(diagram.selected)
-              showInput();
+              udTextHandle();
             break;
           case "togmod":
             toogleDrag();
@@ -221,6 +283,20 @@
         }
 
       })
+
+      function udTextHandle() {
+        let myform = document.getElementById(`udform`);
+        let selected = diagram.selected;
+        let {text, borderType, cellColor} = myform;
+
+        text.value = selected.options.text;
+        borderType.value = selected.options.borderType ? selected.options.borderType : 0;
+        cellColor.value = selected.options.cellColor;
+        selectColor(cellColor);
+
+        modal.classList.add("show");
+        text.focus();
+      }
 
 
       /* 重写draw方法 保证每次调用时 清空当前SVG */
@@ -240,11 +316,6 @@
         initCell.h = cellH;
       }
 
-      function showInput() {
-        modal.classList.add("show");
-        modal_text.focus();
-      }
-
       function delcell() {
         if(diagram.options.draggable || !diagram.selected) {
           return false;
@@ -255,7 +326,6 @@
         let selected = diagram.selected;
         let sarr = selected.sourceConnections.map(item => item.element.id);
         let tarr = selected.targetConnections.map(item => item.element.id);
-        console.log(arr2);
         sarr.forEach(item => {
           diagram.connectors[arr2.indexOf(item)] = undefined;
         });
@@ -265,7 +335,7 @@
         diagram.connectors = diagram.connectors.filter(item => {
           return item !== undefined;
         })
-  
+
         diagram.cells[0].splice(arr.indexOf(selected.element.id), 1);
 
         diagram.draw();
@@ -291,6 +361,7 @@
         if(diagram.options.allowDrag) {
           document.getElementById("togmod").innerText = `拖拽模式（布局）`;
           document.getElementById("updelPart").classList.add(`disable`);
+          if(diagram.selected) diagram.selected = null;
         } else {
           diagram.selected = null;
           document.getElementById("togmod").innerText = `基本模式（编辑）`;
