@@ -199,30 +199,60 @@
       let win_w = document.documentElement.clientWidth || document.body.clientWidth;
       let win_h = document.documentElement.clientHeight || document.body.clientHeight;
       let app = document.querySelector(".app");
+      let svgStage = document.querySelector("#my");
       let modal = document.querySelector("#modal");
       let toolWrap = document.querySelector(".tool-wrap");
+      let scaleTimes = 1.1;
+      let initCell = {w: 0, h: 0};
 
       app.style.width = win_w + 'px';
       app.style.height = win_h + 'px';
+      svgStage.setAttribute(`viewBox`, `0 0 ${win_w} ${win_h}`);
 
-
+      svgStage.addEventListener('mousewheel', function(e) {
+        let scale_w, scale_h, dw, dh, wRatio, hRatio;
+        let svgStage_w = svgStage.clientWidth, svgStage_h = svgStage.clientHeight;
+        if(e.deltaY > 0) {
+          scaleTimes += 0.1;
+          if(scaleTimes > 1.6) scaleTimes = 1.6;
+        } else {
+          scaleTimes -= 0.1;
+          if(scaleTimes < 0.5) scaleTimes = 0.5;
+        }
+        wRatio = e.offsetX / svgStage_w;
+        hRatio = e.offsetY / svgStage_h;
+        scale_w = svgStage_w * scaleTimes;
+        scale_h = svgStage_h * scaleTimes;
+        dw = scale_w - svgStage_w;
+        dh = scale_h - svgStage_h;
+        svgStage.setAttribute(`viewBox`, `${-dw * wRatio} ${-dh * hRatio} ${scale_w} ${scale_h}`);
+        diagram.scaleTimes = scaleTimes;
+      }, false);
       modal.addEventListener('keypress', EntrerDown_closeModal, false);
       modal.addEventListener('click', click_closeModal, false);
 
       function EntrerDown_closeModal(e) {
         let myform = document.getElementById(`udform`);
         let {text, borderType, cellColor} = myform;
+        let selected = diagram.selected;
+        let options = selected.options;
         let _text = text.value, _borderType = borderType.value, _cellColor = cellColor.value;
 
         // 直接跳出的情况
         if(e.keyCode !== 13) return ;
         e.preventDefault();
+        if(!(_text && (_borderType >= 0) && _cellColor)) return alert(`不允许空值`);
+        if(options.text === _text
+          && options.borderType === _borderType
+          && options.cellColor === _cellColor) return console.log(`未修改`);
 
         // 进行修改操作
-        modal.classList.remove("show");
-        setTimeout(function(){
-          SVGEditor.update_selected({text:_tex, borderType:_borderType, cellColor:_cellColor});
-        }, 50);
+          modal.classList.remove("show");
+          setTimeout(function(){
+            selected.addText(_text).addBorderType(_borderType).addCellColor(_cellColor);
+            diagram.draw();
+            diagram.selected = null;
+          }, 50);
       }
 
       function click_closeModal(e) {
@@ -233,24 +263,26 @@
       toolWrap.addEventListener("click",function(e){
         switch (e.target.id) {
           case "node1":
-            SVGEditor.addnew(0);
+            addnew({borderType: 1, cellColor: `cell-green`}).addText("开始节点").addImg("http://localhost:7777/start.png");
+            diagram.draw();
             break;
           case "node2":
-            SVGEditor.addnew(2);
+            addnew({cellColor: `cell-red`}).addText("过程节点").addImg("http://localhost:7777/start.png");
+            diagram.draw();
             break;
           case "node3":
-            SVGEditor.addnew(1);
+            addnew({borderType: 1, cellColor: `cell-white`}).addText("结束节点").addImg("http://localhost:7777/start.png");
+            diagram.draw();
             break;
           case "udtext":
-            if(SVGEditor.get_selected())
+            if(diagram.selected)
               udTextHandle();
             break;
           case "togmod":
             toogleDrag();
             break;
           case "delcell":
-            if(SVGEditor.get_selected())
-              delcell();
+            delcell();
             break;
           default:
             ;
@@ -260,30 +292,119 @@
 
       function udTextHandle() {
         let myform = document.getElementById(`udform`);
+        let selected = diagram.selected;
         let {text, borderType, cellColor} = myform;
-        let {text:_text, borderType:_borderType, cellColor:_cellColor} = SVGEditor.get_selected();
 
-        text.value = _text;
-        borderType.value = _borderType ? _borderType : 0;
-        cellColor.value = _cellColor;
-        selectColor(_cellColor);
+        text.value = selected.options.text;
+        borderType.value = selected.options.borderType ? selected.options.borderType : 0;
+        cellColor.value = selected.options.cellColor;
+        selectColor(cellColor);
 
         modal.classList.add("show");
         text.focus();
       }
 
+
+      /* 重写draw方法 保证每次调用时 清空当前SVG */
+      let o = SnappyDiagram.prototype.draw;
+      SnappyDiagram.prototype.draw = function() {
+        this.snap.clear();
+        this.markerEnd = this.triangleMarker(this.options.markerWidth, this.options.markerHeight);
+        this.markerStart = this.triangleMarker(this.options.markerWidth, this.options.markerHeight, true);
+        o.call(this);
+      };
+
+      function getCellShape() {
+        let cellH, cellW;
+        cellH = Math.floor(svgStage.clientHeight / 15);
+        cellW = ~~(cellH * 3.5);
+        initCell.w = cellW;
+        initCell.h = cellH;
+      }
+
+      function delcell() {
+        if(diagram.options.draggable || !diagram.selected) {
+          return false;
+        }
+        let arr = diagram.cells[0].map(item => item.element.id);
+        let arr2 = diagram.connectors.map(item => item.element.id);
+
+        let selected = diagram.selected;
+        let sarr = selected.sourceConnections.map(item => item.element.id);
+        let tarr = selected.targetConnections.map(item => item.element.id);
+        sarr.forEach(item => {
+          diagram.connectors[arr2.indexOf(item)] = undefined;
+        });
+        tarr.forEach(item => {
+          diagram.connectors[arr2.indexOf(item)] = undefined;
+        })
+        diagram.connectors = diagram.connectors.filter(item => {
+          return item !== undefined;
+        })
+
+        diagram.cells[0].splice(arr.indexOf(selected.element.id), 1);
+
+        diagram.draw();
+        return true;
+      }
+
+
+      /* ****************   一些操作接口   ********************* */
+      function addnew (options) {
+        let cell;
+        let { borderType, cellColor } = options;
+        cell = diagram.addBox(0, 0, { attrs: {width:initCell.w, height: initCell.h}, borderType, cellColor});
+        if(diagram.options.allowDrag){
+          diagram.draw();
+        }else {
+          toogleDrag();
+        }
+        return cell;
+      }
+
       function toogleDrag () {
-        SVGEditor.toogleDrag();
-        if(SVGEditor.get_allowDragStatus()){
+        diagram.options.allowDrag = !diagram.options.allowDrag;
+        if(diagram.options.allowDrag) {
           document.getElementById("togmod").innerText = `拖拽模式（布局）`;
           document.getElementById("updelPart").classList.add(`disable`);
-        }else {
+          if(diagram.selected) diagram.selected = null;
+        } else {
+          diagram.selected = null;
           document.getElementById("togmod").innerText = `基本模式（编辑）`;
           document.getElementById("updelPart").classList.remove(`disable`);
         }
+        diagram.draw();
       }
 
+      function addText(cell, text) {
+        cell.addText(text);
+        diagram.draw();
+        return cell;
+      }
+
+      function delText(cell) {
+        cell.delText();
+        diagram.draw();
+        return cell;
+      }
+
+      function addImg(cell, imgUrl) {
+        cell.addImg(imgUrl);
+        diagram.draw();
+        return cell;
+      }
+
+      function delImg(cell) {
+        cell.delImg();
+        diagram.draw();
+        return cell;
+      }
+
+      getCellShape();
+      diagram = new SnappyDiagram({ el: svgStage, width: initCell.w, height: initCell.h, allowDrag: false})
+      // diagram.snap.attr('viewBox', `0 0 ${win_w} ${win_h}`);
+      // diagram.snap.attr('width', `100%`);
+      // diagram.snap.attr('height', `100%`);
     </script>
-    <script src="./dist/svgEditor.js"></script>
   </body>
 </html>
