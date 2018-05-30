@@ -1,0 +1,121 @@
+.svg-wrap {
+  background: url('./bg_svg.png');
+  background-size: 50px 50px;
+  height: 90%;
+  width: 100%;
+  position: relative;
+}
+.tool-wrap {
+  width: 100%;
+  height: 34px;
+  background:#e7e7e7;
+  border-bottom: 2px solid #dcdcdc;
+}
+.tool-wrap ul + ul {
+  border-left: 1px solid #b9b9b9;
+}
+.tool-wrap > ul > li {
+  margin-right: 20px;
+}
+.tool-wrap > ul > li:first-child {
+  margin-left: 20px;
+}
+.tool-wrap > .disable {
+  pointer-events: none;
+  opacity: 0.7;
+}
+.modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  opacity: 0;
+}
+.modal .content {
+  max-width: 480px;
+  min-height: 150px;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 1px 1px 10px 2px #d0e0e0;
+  background: #e7e7e7;
+}
+.show {
+  z-index: 99;
+  opacity: 1;
+}
+.app {
+  position: relative;
+}
+
+.btn {
+  color: white;
+  font-size: 15px;
+}
+.btn:hover {
+  cursor: pointer;
+  color: #39c5c9;
+}
+/* 一些格式化 */
+* {
+  margin:0;
+  padding: 0;
+  box-sizing: border-box;
+}
+span, p, tspan {
+  -moz-user-select: none; /*火狐*/
+  -webkit-user-select: none; /*webkit浏览器*/
+  -ms-user-select: none; /*IE10*/
+  -khtml-user-select: none; /*早期浏览器*/
+  user-select: none;
+}
+label {
+  cursor: default;
+}
+ul li{
+  list-style-type:none;
+}
+.bg-green {
+  background: #d2f9df;
+}
+.bg-red {
+  background: #fbdfdf;
+}
+.bg-white {
+  background: #fff;
+}
+.cell-green {
+  fill: #d2f9df;
+}
+.cell-red {
+  fill: #fbdfdf;
+}
+.cell-white {
+  fill: #fff;
+}
+/* flex布局 */
+.flex{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.flex-row{
+  flex-direction: row;
+}
+.flex-center{
+  justify-content: center;
+}
+.flex-around {
+  justify-content: space-around;
+}
+.flex-item-1{
+  flex: 1;
+}
+.flex-beRow {
+  width: 100%;
+  margin-bottom: 20px;
+}
+.flex-beRow:last-child {
+  margin-bottom: 0;
+}

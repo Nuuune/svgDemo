@@ -244,13 +244,13 @@
       if(className.indexOf("selected") > -1) {                          // 点击了已选择的  进行取消选择处理
         this.diagram.selected = null;
         classList.remove("selected");
-      } else {
+      } else if(!this.diagram.options.allowDrag) {
         if(this.diagram.selected) { // 已选择了一个了， 进行后期处理 如：连接 等
           let connectors = this.diagram.connectors;
           let conExist = false;
           for(let i = 0; i < connectors.length; i++) {
-            if((connectors[i].cellStart === this.diagram.selected && connectors[i].cellEnd === this)
-              || (connectors[i].cellStart === this && connectors[i].cellEnd === this.diagram.selected) ) {
+            if((connectors[i].cellStart.element.id === this.diagram.selected.element.id && connectors[i].cellEnd.element.id === this.element.id)
+              || (connectors[i].cellStart.element.id === this.element.id && connectors[i].cellEnd.element.id === this.diagram.selected.element.id) ) {
                 conExist = true;
                 break;
               }

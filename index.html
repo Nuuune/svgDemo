@@ -4,125 +4,9 @@
     <meta charset="utf-8" />
     <script src="./vendor/snap.svg.js"></script>
     <script src="./dist/snappy-diagram.js"></script>
-    <link href="./dist/snappy-diagram.css" media="all" rel="stylesheet" type="text/css">
-    <style>
-      .flex{
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      .flex-row{
-        flex-direction: row;
-      }
-      .flex-center{
-        justify-content: center;
-      }
-      .flex-around {
-        justify-content: space-around;
-      }
-      .flex-item-1{
-        flex: 1;
-      }
-      .flex-beRow {
-        width: 100%;
-        margin-bottom: 20px;
-      }
-      .flex-beRow:last-child {
-        margin-bottom: 0;
-      }
-      .svg-wrap {
-        height: 90%;
-        width: 100%;
-        position: relative;
-      }
-      .tool-wrap {
-        width: 100%;
-        height: 34px;
-        background:#e7e7e7;
-        border-bottom: 2px solid #dcdcdc;
-      }
-      .tool-wrap ul + ul {
-        border-left: 1px solid #b9b9b9;
-      }
-      .tool-wrap > ul > li {
-        margin-right: 20px;
-      }
-      .tool-wrap > ul > li:first-child {
-        margin-left: 20px;
-      }
-      .tool-wrap > .disable {
-        pointer-events: none;
-        opacity: 0.7;
-      }
-      .modal {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-      }
-      .modal .content {
-        max-width: 480px;
-        min-height: 150px;
-        padding: 10px;
-        border-radius: 10px;
-        box-shadow: 1px 1px 10px 2px #fff;
-        background: #6aedf5;
-      }
-      .show {
-        z-index: 99;
-      }
-      .app {
-        position: relative;
-      }
-
-      .btn {
-        color: white;
-        font-size: 15px;
-      }
-      .btn:hover {
-        cursor: pointer;
-        color: #39c5c9;
-      }
-      /* 一些格式化 */
-      * {
-        margin:0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      span, p, tspan {
-        -moz-user-select: none; /*火狐*/
-        -webkit-user-select: none; /*webkit浏览器*/
-        -ms-user-select: none; /*IE10*/
-        -khtml-user-select: none; /*早期浏览器*/
-        user-select: none;
-      }
-      label {
-        cursor: default;
-      }
-      ul li{
-        list-style-type:none;
-      }
-      .bg-green {
-        background: #d2f9df;
-      }
-      .bg-red {
-        background: #fbdfdf;
-      }
-      .bg-white {
-        background: #fff;
-      }
-      .cell-green {
-        fill: #d2f9df;
-      }
-      .cell-red {
-        fill: #fbdfdf;
-      }
-      .cell-white {
-        fill: #fff;
-      }
-    </style>
+    <script src="./dist/svgEditor.js"></script>
+    <link href="./dist/snappy-diagram.css" media="all" rel="stylesheet" type="text/css" />
+    <link href="./dist/base.css" rel="stylesheet" type="text/css" />
     <title>svg</title>
   </head>
   <body>
@@ -176,6 +60,22 @@
 
     <script>
 
+      let win_w = document.documentElement.clientWidth || document.body.clientWidth;
+      let win_h = document.documentElement.clientHeight || document.body.clientHeight;
+      let app = document.querySelector(".app");
+      let mySVG = document.getElementById("my");
+      let modal = document.querySelector("#modal");
+      let toolWrap = document.querySelector(".tool-wrap");
+
+      app.style.width = win_w + 'px';
+      app.style.height = win_h + 'px';
+
+      let myEditor = new SVGEditor(mySVG);
+
+      modal.addEventListener('keypress', EntrerDown_closeModal, false);
+      modal.addEventListener('click', click_closeModal, false);
+
+
       function selectColor(selectDom) {
         let value = selectDom.value;
         switch (value) {
@@ -192,22 +92,6 @@
             ;
         }
       }
-      //----------------------
-
-
-
-      let win_w = document.documentElement.clientWidth || document.body.clientWidth;
-      let win_h = document.documentElement.clientHeight || document.body.clientHeight;
-      let app = document.querySelector(".app");
-      let modal = document.querySelector("#modal");
-      let toolWrap = document.querySelector(".tool-wrap");
-
-      app.style.width = win_w + 'px';
-      app.style.height = win_h + 'px';
-
-
-      modal.addEventListener('keypress', EntrerDown_closeModal, false);
-      modal.addEventListener('click', click_closeModal, false);
 
       function EntrerDown_closeModal(e) {
         let myform = document.getElementById(`udform`);
@@ -221,7 +105,7 @@
         // 进行修改操作
         modal.classList.remove("show");
         setTimeout(function(){
-          SVGEditor.update_selected({text:_tex, borderType:_borderType, cellColor:_cellColor});
+          myEditor.update_selected({text:_text, borderType:_borderType, cellColor:_cellColor});
         }, 50);
       }
 
@@ -233,24 +117,30 @@
       toolWrap.addEventListener("click",function(e){
         switch (e.target.id) {
           case "node1":
-            SVGEditor.addnew(0);
+            myEditor.addnew(0);
+            document.getElementById("togmod").innerText = `拖拽模式（布局）`;
+            document.getElementById("updelPart").classList.add(`disable`);
             break;
           case "node2":
-            SVGEditor.addnew(2);
+            myEditor.addnew(2);
+            document.getElementById("togmod").innerText = `拖拽模式（布局）`;
+            document.getElementById("updelPart").classList.add(`disable`);
             break;
           case "node3":
-            SVGEditor.addnew(1);
+            myEditor.addnew(1);
+            document.getElementById("togmod").innerText = `拖拽模式（布局）`;
+            document.getElementById("updelPart").classList.add(`disable`);
             break;
           case "udtext":
-            if(SVGEditor.get_selected())
+            if(myEditor.get_selected())
               udTextHandle();
             break;
           case "togmod":
             toogleDrag();
             break;
           case "delcell":
-            if(SVGEditor.get_selected())
-              delcell();
+            if(myEditor.get_selected())
+              myEditor.delCell();
             break;
           default:
             ;
@@ -261,20 +151,20 @@
       function udTextHandle() {
         let myform = document.getElementById(`udform`);
         let {text, borderType, cellColor} = myform;
-        let {text:_text, borderType:_borderType, cellColor:_cellColor} = SVGEditor.get_selected();
+        let {text:_text, borderType:_borderType, cellColor:_cellColor} = myEditor.get_selected();
 
         text.value = _text;
         borderType.value = _borderType ? _borderType : 0;
         cellColor.value = _cellColor;
-        selectColor(_cellColor);
+        selectColor(cellColor);
 
         modal.classList.add("show");
         text.focus();
       }
 
       function toogleDrag () {
-        SVGEditor.toogleDrag();
-        if(SVGEditor.get_allowDragStatus()){
+        myEditor.toogleDrag();
+        if(myEditor.get_allowDragStatus()){
           document.getElementById("togmod").innerText = `拖拽模式（布局）`;
           document.getElementById("updelPart").classList.add(`disable`);
         }else {
@@ -284,6 +174,5 @@
       }
 
     </script>
-    <script src="./dist/svgEditor.js"></script>
   </body>
 </html>
